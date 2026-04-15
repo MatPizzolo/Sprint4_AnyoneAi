@@ -201,7 +201,7 @@ class HuggingFaceEmbeddings:
         # Remember that the model will return embeddings for the whole sequence, so you may need to aggregate them
         # Get the last hidden state and take the mean across the sequence dimension
         # The resulting tensor should have shape [batch_size, hidden_size]
-        embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+        embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy().squeeze()
         
         return embeddings
 

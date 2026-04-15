@@ -147,9 +147,12 @@ class FoundationalCVModel:
         if backbone in ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']:
             # DONE: Adjust the input for channels first models within the model
             # You can use the perm argument of tf.transpose to permute the dimensions of the input tensor
-            input_layer_transposed = tf.transpose(input_layer, perm=[0, 3, 1, 2])
+            # Use Lambda layer to wrap tf.transpose for Keras compatibility
+            from tensorflow.keras.layers import Lambda
+            input_layer_transposed = Lambda(lambda x: tf.transpose(x, perm=[0, 3, 1, 2]))(input_layer)
             # DONE: Get the pooling output of the model "pooler_output"
-            outputs = self.base_model(input_layer_transposed)['pooler_output']
+            model_output = self.base_model(input_layer_transposed)
+            outputs = model_output.pooler_output
         # If is a model from keras.applications:
         else:
             # DONE: Get the pooling output of the model

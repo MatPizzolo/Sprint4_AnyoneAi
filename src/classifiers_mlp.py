@@ -316,7 +316,7 @@ def test_model(y_test, y_pred, y_prob=None, encoder=None):
 
 
     
-def train_mlp(train_loader, test_loader, text_input_size, image_input_size, output_size, num_epochs=50, report=False, lr=0.001, set_weights=True, adam=False, p=0.0, seed=1, patience=40, save_results=True, train_model=True, test_mlp_model=True):
+def train_mlp(train_loader, test_loader, text_input_size, image_input_size, output_size, hidden=[128], num_epochs=50, report=False, lr=0.001, set_weights=True, adam=False, p=0.0, seed=1, patience=40, save_results=True, train_model=True, test_mlp_model=True):
     """
     Trains a multimodal early fusion model using both text and image data.
 
@@ -335,6 +335,7 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         lr (float, optional): Learning rate for the optimizer. Default is 0.001.
         set_weights (bool, optional): Whether to compute and apply class weights to handle imbalanced datasets. Default is True.
         adam (bool, optional): Whether to use the Adam optimizer instead of SGD. Default is False.
+        hidden (int or list, optional): Hidden layer sizes. If int, creates single layer. If list, creates multiple layers. Default is [128].
         p (float, optional): Dropout rate for regularization in the model. Default is 0.0.
         seed (int, optional): Seed for random number generators to ensure reproducibility. Default is 1.
         patience (int, optional): Number of epochs with no improvement on validation loss before early stopping. Default is 40.
