@@ -316,7 +316,7 @@ def test_model(y_test, y_pred, y_prob=None, encoder=None):
 
 
     
-def train_mlp(train_loader, test_loader, text_input_size, image_input_size, output_size, hidden=[128], num_epochs=50, report=False, lr=0.001, set_weights=True, adam=False, p=0.0, seed=1, patience=40, save_results=True, train_model=True, test_mlp_model=True):
+def train_mlp(train_loader, test_loader, text_input_size, image_input_size, output_size, hidden=None, num_epochs=50, report=False, lr=0.001, set_weights=True, adam=False, p=0.0, seed=1, patience=40, save_results=True, train_model=True, test_mlp_model=True):
     """
     Trains a multimodal early fusion model using both text and image data.
 
@@ -330,12 +330,12 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         text_input_size (int): The size of the input vector for the text data.
         image_input_size (int): The size of the input vector for the image data.
         output_size (int): Number of output classes for the softmax layer.
+        hidden (int or list, optional): Hidden layer sizes. If int, creates single layer. If list, creates multiple layers. Default is [128].
         num_epochs (int, optional): Number of training epochs. Default is 50.
         report (bool, optional): Whether to generate a detailed classification report and display metrics. Default is False.
         lr (float, optional): Learning rate for the optimizer. Default is 0.001.
         set_weights (bool, optional): Whether to compute and apply class weights to handle imbalanced datasets. Default is True.
         adam (bool, optional): Whether to use the Adam optimizer instead of SGD. Default is False.
-        hidden (int or list, optional): Hidden layer sizes. If int, creates single layer. If list, creates multiple layers. Default is [128].
         p (float, optional): Dropout rate for regularization in the model. Default is 0.0.
         seed (int, optional): Seed for random number generators to ensure reproducibility. Default is 1.
         patience (int, optional): Number of epochs with no improvement on validation loss before early stopping. Default is 40.
@@ -362,6 +362,10 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         - `train_loader` and `test_loader` should be instances of `MultimodalDataset` or compatible Keras data loaders.
         - If the dataset is imbalanced, setting `set_weights=True` is recommended to ensure better model performance on minority classes.
     """
+    
+    # Set default hidden layer configuration
+    if hidden is None:
+        hidden = [128]
     
     if seed is not None:
         np.random.seed(seed)
