@@ -157,10 +157,10 @@ class HuggingFaceEmbeddings:
             device (str, optional): Device to use for model processing. Defaults to 'cuda' if available, otherwise 'cpu'.
         """
         self.model_name = model_name
-        # TODO: Load the Hugging Face tokenizer from a pre-trained model
-        self.tokenizer = None
-        # TODO: Load the model from the Hugging Face model hub from the specified model name
-        self.model = None
+        # DONE: Load the Hugging Face tokenizer from a pre-trained model
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        # DONE: Load the model from the Hugging Face model hub from the specified model name
+        self.model = AutoModel.from_pretrained(model_name)
         self.path = path
         self.save_path = save_path or 'Models'
         
@@ -187,32 +187,33 @@ class HuggingFaceEmbeddings:
         Returns:
             np.ndarray: A numpy array containing the embedding vector for the input text.
         """
-        ### TODO: Tokenize the input text using the Hugging Face tokenizer
-        inputs = None
+        # DONE: Tokenize the input text using the Hugging Face tokenizer
+        inputs = self.tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
         
         # Move the inputs to the device
         inputs = {key: value.to(self.device) for key, value in inputs.items()}
         
         with torch.no_grad():
-            # TODO: Generate the embeddings using the Hugging Face model from the tokenized input
-            outputs = None
+            # DONE: Generate the embeddings using the Hugging Face model from the tokenized input
+            outputs = self.model(**inputs)
         
-        # TODO: Extract the embeddings from the model output, send to cpu and return the numpy array
+        # DONE: Extract the embeddings from the model output, send to cpu and return the numpy array
         # Remember that the model will return embeddings for the whole sequence, so you may need to aggregate them
         # Get the last hidden state and take the mean across the sequence dimension
         # The resulting tensor should have shape [batch_size, hidden_size]
-        embeddings = None
+        embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
         
         return embeddings
 
     def get_embedding_df(self, column, directory, file):
         # Load the CSV file
         df = pd.read_csv(self.path)
-        # TODO: Generate embeddings for the specified column using the `get_embedding` method
+        # DONE: Generate embeddings for the specified column using the `get_embedding` method
         # Make sure to convert the embeddings to a list before saving to the DataFrame
-        df["embeddings"] = None
+        df["embeddings"] = df[column].apply(self.get_embedding)
         
         os.makedirs(directory, exist_ok=True)
-        # TODO: Save the DataFrame with the embeddings to a new CSV file in the specified directory
+        # DONE: Save the DataFrame with the embeddings to a new CSV file in the specified directory
+        df.to_csv(os.path.join(directory, file), index=False)
         
 

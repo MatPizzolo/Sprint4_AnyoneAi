@@ -193,18 +193,18 @@ def train_test_split_and_feature_extraction(df, test_size=0.3, random_state=42):
     """
 
     # Split the data:
-    # TODO: Split the data into train and test sets setting using the test_size and random_state parameters
-    train_df, test_df = None, None
+    # DONE: Split the data into train and test sets setting using the test_size and random_state parameters
+    train_df, test_df = train_test_split(df, test_size=test_size, random_state=random_state)
 
     # Select features and labels vectors:
     # Features
-    # TODO: Select the name of the columns with the text embeddings and return it as a list (Even if there is only one column)
+    # DONE: Select the name of the columns with the text embeddings and return it as a list (Even if there is only one column)
     # Make sure to select only the columns that are actually text embeddings, that means text_1, text_2, etc.
-    text_columns = [None]
-    # TODO: Select the name of the columns with the image embeddings and return it as a list (Even if there is only one column)
+    text_columns = [col for col in df.columns if col.startswith('text_')]
+    # DONE: Select the name of the columns with the image embeddings and return it as a list (Even if there is only one column)
     # Make sure to select only the columns that are actually image embeddings, that means image_1, image_2, etc.
-    image_columns = [None]
-    # TODO: Select the name of the column with the class labels and return it as a list (Even if there is only one column)
-    label_columns = [None]
+    image_columns = [col for col in df.columns if col.startswith('image_')]
+    # DONE: Select the name of the column with the class labels and return it as a list (Even if there is only one column)
+    label_columns = ['class_id']
 
     return train_df, test_df, text_columns, image_columns, label_columns

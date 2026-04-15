@@ -77,15 +77,15 @@ class MultimodalDataset(Sequence):
             ValueError: If both text_cols and image_cols are None or empty.
         """
         if text_cols:
-            # TODO: Get the text data from the DataFrame as a NumPy array
-            self.text_data = None
+            # DONE: Get the text data from the DataFrame as a NumPy array
+            self.text_data = df[text_cols].values
         else:
             # Else, set text data to None
             self.text_data = None
             
         if image_cols:
-            # TODO: Get the image data from the DataFrame as a NumPy array
-            self.image_data = None
+            # DONE: Get the image data from the DataFrame as a NumPy array
+            self.image_data = df[image_cols].values
         else:
             # Else, set image data to None
             self.image_data = None
@@ -93,8 +93,8 @@ class MultimodalDataset(Sequence):
         if not text_cols and not image_cols:
             raise ValueError("At least one of text_cols or image_cols must be provided.")
         
-        # TODO: Get the labels from the DataFrame and encode them
-        self.labels = None
+        # DONE: Get the labels from the DataFrame and encode them
+        self.labels = df[label_col].values
 
         # Use provided encoder or fit a new one
         if encoder is None:
@@ -197,47 +197,48 @@ def create_early_fusion_model(text_input_size, image_input_size, output_size, hi
         raise ValueError("At least one of text_input_size and image_input_size must be provided.")
     
     if text_input_size is not None:
-        # TODO: Define text input layer for only text data
-        text_input = None
+        # DONE: Define text input layer for only text data
+        text_input = Input(shape=(text_input_size,))
     if image_input_size is not None:
-        # TODO: Define image input layer for only image data
-        image_input = None
+        # DONE: Define image input layer for only image data
+        image_input = Input(shape=(image_input_size,))
     
     
     if text_input_size is not None and image_input_size is not None:
-        # TODO: Concatenate text and image inputs if both are provided
-        x = None
+        # DONE: Concatenate text and image inputs if both are provided
+        x = Concatenate()([text_input, image_input])
     elif text_input_size is not None:
         x = text_input
     elif image_input_size is not None:
         x = image_input
 
     if isinstance(hidden, int):
-        # TODO: Add a single dense layer 
+        # DONE: Add a single dense layer 
         # Optionally play with activation, dropout and normalization
-        x = None
-        x = None
+        x = Dense(hidden, activation='relu')(x)
+        x = Dropout(p)(x)
+        x = BatchNormalization()(x)
     elif isinstance(hidden, list):
         for h in hidden:
-            # TODO: Add multiple dense layers based on the hidden list
+            # DONE: Add multiple dense layers based on the hidden list
             # Optionally play with activation, dropout and normalization
-            x = None
-            x = None
-            x = None
+            x = Dense(h, activation='relu')(x)
+            x = Dropout(p)(x)
+            x = BatchNormalization()(x)
 
-    # TODO: Add the output layer with softmax activation
-    output = None
+    # DONE: Add the output layer with softmax activation
+    output = Dense(output_size, activation='softmax')(x)
 
     # Create the model
     if text_input_size is not None and image_input_size is not None:
-        # TODO: Define the model with both text and image inputs
-        model = None
+        # DONE: Define the model with both text and image inputs
+        model = Model(inputs=[text_input, image_input], outputs=output)
     elif text_input_size is not None:
-        # TODO: Define the model with only text input
-        model = None
+        # DONE: Define the model with only text input
+        model = Model(inputs=text_input, outputs=output)
     elif image_input_size is not None:
-        # TODO: Define the model with only image input
-        model = None
+        # DONE: Define the model with only image input
+        model = Model(inputs=image_input, outputs=output)
     else:
         raise ValueError("At least one of text_input_size and image_input_size must be provided.")
     
@@ -366,40 +367,46 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         tf.random.set_seed(seed)
       
     # Create an instance of the early fusion model  
-    # TODO: Create an early fusion model using the provided input sizes and output size
-    model = None
+    # DONE: Create an early fusion model using the provided input sizes and output size
+    model = create_early_fusion_model(text_input_size, image_input_size, output_size, hidden, p)
 
     # Compute class weights for imbalanced datasets
     if set_weights:
         class_indices = np.argmax(train_loader.labels, axis=1)
-        # TODO: Compute class weights using the training labels
+        # DONE: Compute class weights using the training labels
         # You should use the `compute_class_weight` function from scikit-learn.
-        class_weights = None
+        class_weights = compute_class_weight('balanced', classes=np.unique(class_indices), y=class_indices)
         class_weights = {i: weight for i, weight in enumerate(class_weights)}
 
-    # TODO: Choose the loss function for multi-class classification
-    loss = None
+    # DONE: Choose the loss function for multi-class classification
+    loss = tf.keras.losses.CategoricalCrossentropy()
 
     # Choose the optimizer
     if adam:
-        # TODO: Use the Adam optimizer with the specified learning rate
-        optimizer = None
+        # DONE: Use the Adam optimizer with the specified learning rate
+        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
     else:
-        # TODO: Use the SGD optimizer with the specified learning rate
-        optimizer = None
+        # DONE: Use the SGD optimizer with the specified learning rate
+        optimizer = tf.keras.optimizers.SGD(learning_rate=lr)
 
-    # TODO: Compile the model with the chosen optimizer and loss function
-    
+    # DONE: Compile the model with the chosen optimizer and loss function
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
-    # TODO: Define an early stopping callback with the specified patience
-    early_stopping = None
+    # DONE: Define an early stopping callback with the specified patience
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=patience, restore_best_weights=True)
 
-    # TODO: Train the model using the training data and validation data
+    # DONE: Train the model using the training data and validation data
     # Use the class weights if set_weights
     # Use the early stopping callback
     # Use the number of epochs specified
     if train_model:
-        history = None
+        history = model.fit(
+            train_loader,
+            validation_data=test_loader,
+            epochs=num_epochs,
+            class_weight=class_weights if set_weights else None,
+            callbacks=[early_stopping]
+        )
 
     if test_mlp_model:
         # Test the model on the test set
