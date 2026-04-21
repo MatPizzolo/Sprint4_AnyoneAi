@@ -1,3 +1,9 @@
+preprocessing(optional).ipynb
+Embeddings/
+Embeddings_test/
+data/*
+data/
+
 # Python
 __pycache__/
 *.py[cod]
