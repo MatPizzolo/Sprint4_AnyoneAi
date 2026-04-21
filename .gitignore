@@ -1,8 +1,18 @@
 preprocessing(optional).ipynb
 Embeddings/
 Embeddings_test/
-data/*
-data/
+
+# Training data (large datasets - keep out of repo)
+data/images/
+data/processed_products_with_images.csv
+data/Raw/products.json
+data/Raw/processed_products.csv
+
+# Allow test data (required for project structure)
+!data/test_products.csv
+!data/test_images/
+!data/Raw/LICENSE
+!data/Raw/categories.json
 
 # Python
 __pycache__/
@@ -53,7 +63,6 @@ htmlcov/
 *.onnx
 models/
 checkpoints/
-data/
 datasets/
 logs/
 runs/
