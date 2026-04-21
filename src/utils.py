@@ -33,7 +33,13 @@ def process_embeddings(df, col_name):
     df_processed = process_embeddings(df, 'embeddings')
     """
     # Convert the values in the column to lists
-    df[col_name] = df[col_name].apply(eval)
+    # Handles both Python list format "[1.0, 2.0]" and numpy format "[1.0  2.0]"
+    def _parse_embedding(x):
+        try:
+            return eval(x)
+        except SyntaxError:
+            return np.fromstring(x.strip('[]'), sep=' ').tolist()
+    df[col_name] = df[col_name].apply(_parse_embedding)
 
     # Extract values from lists and create new columns
     embeddings_df = pd.DataFrame(df[col_name].to_list(), columns=[f"text_{i+1}" for i in range(df[col_name].str.len().max())])
@@ -141,7 +147,7 @@ class ImageDownloader:
         for index, row in df.iterrows():
             if i % print_every == 0:
                 print(f"Downloading image {i}/{len(df)}")
-                i += 1
+            i += 1
             
             sku = row['sku']
             image_url = row['image']
@@ -158,7 +164,6 @@ class ImageDownloader:
                 img = Image.open(BytesIO(response.content))
                 img = img.resize(self.image_size, Image.Resampling.LANCZOS)
                 img.save(image_path)
-                #print(f"Downloaded image for SKU: {sku}")
                 image_paths.append(image_path)
             except Exception as e:
                 print(f"Could not download image for SKU: {sku}. Error: {e}")

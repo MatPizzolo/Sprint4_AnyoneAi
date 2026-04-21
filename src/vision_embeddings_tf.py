@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+from concurrent.futures import ThreadPoolExecutor
 from transformers import TFConvNextV2Model, TFViTModel, TFSwinModel
 from tensorflow.keras.applications import (
     ResNet50, ResNet101, DenseNet121, DenseNet169, InceptionV3
@@ -87,8 +88,17 @@ class FoundationalCVModel:
     def __init__(self, backbone, mode='eval', input_shape=(224, 224, 3)):
         self.backbone_name = backbone
         
+        _transformer_backbones = ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']
+        _is_transformer = backbone in _transformer_backbones
+
         # Select the backbone from the possible foundational models
-        input_layer = Input(shape=input_shape)
+        # HuggingFace TF models use tf_keras internally; use tf_keras.Input for transformer
+        # backbones to avoid Keras 3 KerasTensor incompatibility with input_processing.
+        if _is_transformer:
+            import tf_keras as _tf_keras
+            input_layer = _tf_keras.Input(shape=input_shape)
+        else:
+            input_layer = Input(shape=input_shape)
         
         
         if backbone == 'resnet50':
@@ -138,29 +148,28 @@ class FoundationalCVModel:
         if mode == 'eval':
             # DONE: Set the model to evaluation mode (non-trainable)
             self.base_model.trainable = False
-            pass
         
         # Take into account the model's input requirements. In models from transformers, the input is channels first, but in models from keras.applications, the input is channels last.
         # Aditionally, the output of the model is different in both cases, we need to get the pooling of the output layer.
         
         # If is a model from transformers:
-        if backbone in ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']:
+        if _is_transformer:
             # DONE: Adjust the input for channels first models within the model
             # You can use the perm argument of tf.transpose to permute the dimensions of the input tensor
             # Use Lambda layer to wrap tf.transpose for Keras compatibility
-            from tensorflow.keras.layers import Lambda
-            input_layer_transposed = Lambda(lambda x: tf.transpose(x, perm=[0, 3, 1, 2]))(input_layer)
+            input_layer_transposed = _tf_keras.layers.Lambda(lambda x: tf.transpose(x, perm=[0, 3, 1, 2]))(input_layer)
             # DONE: Get the pooling output of the model "pooler_output"
             model_output = self.base_model(input_layer_transposed)
             outputs = model_output.pooler_output
+            # DONE: Create the final model with the input layer and the pooling output
+            self.model = _tf_keras.Model(inputs=input_layer, outputs=outputs)
         # If is a model from keras.applications:
         else:
             # DONE: Get the pooling output of the model
             # In this case the pooling layer is not included in the model, we can use a pooling layer such as GlobalAveragePooling2D
             outputs = GlobalAveragePooling2D()(self.base_model.output)
-        
-        # DONE: Create the final model with the input layer and the pooling output
-        self.model = Model(inputs=input_layer, outputs=outputs)
+            # DONE: Create the final model with the input layer and the pooling output
+            self.model = Model(inputs=input_layer, outputs=outputs)
         
     def get_output_shape(self):
         """
@@ -188,7 +197,7 @@ class FoundationalCVModel:
             Predictions or features from the model for the given images.
         """
         # DONE: Perform a forward pass through the model and return the predictions
-        predictions = self.model.predict(images)
+        predictions = self.model.predict(images, verbose=0)
         return predictions
 
 
@@ -383,9 +392,12 @@ def get_embeddings_df(batch_size=32, path="data/images", dataset_name='', backbo
     
     # Process images in batches and extract features
     for i in range(0, len(dataset), batch_size):
-        # Get the image files and images for the current batch
-        batch_files = dataset.image_files[i:i + batch_size]
-        batch_imgs = np.array([dataset[j][1] for j in range(i, min(i + batch_size, len(dataset)))])
+        # Get the image files and images for the current batch in parallel
+        indices = range(i, min(i + batch_size, len(dataset)))
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(dataset.__getitem__, indices))
+        batch_files = [r[0] for r in results]
+        batch_imgs = np.array([r[1] for r in results])
         
         # Generate embeddings for the batch of images
         batch_features = model.predict(batch_imgs)
@@ -408,10 +420,6 @@ def get_embeddings_df(batch_size=32, path="data/images", dataset_name='', backbo
     df = pd.concat([df['ImageName'], df_aux], axis=1)
     
     # Save the DataFrame to a CSV file
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    
-    if not os.path.exists(f'{directory}/{dataset_name}'):
-        os.makedirs(f'{directory}/{dataset_name}')
+    os.makedirs(f'{directory}/{dataset_name}', exist_ok=True)
         
     df.to_csv(f'{directory}/{dataset_name}/Embeddings_{backbone}.csv', index=False)

@@ -1,6 +1,4 @@
 """ Evaluate Medical Tests Classification in LLMS """
-## Setup
-#### Load the API key and libaries.
 import os
 
 import pandas as pd
@@ -103,7 +101,7 @@ class GPT:
         # TODO: Save the DataFrame with the embeddings to a new CSV file in the specified directory
 
 
-## Hugging face Models
+# HuggingFace Models
 class HuggingFaceEmbeddings:
     """
     A class to handle text embedding generation using a Hugging Face pre-trained transformer model.
@@ -210,7 +208,7 @@ class HuggingFaceEmbeddings:
         df = pd.read_csv(self.path)
         # DONE: Generate embeddings for the specified column using the `get_embedding` method
         # Make sure to convert the embeddings to a list before saving to the DataFrame
-        df["embeddings"] = df[column].apply(self.get_embedding)
+        df["embeddings"] = df[column].apply(lambda x: self.get_embedding(x).tolist())
         
         os.makedirs(directory, exist_ok=True)
         # DONE: Save the DataFrame with the embeddings to a new CSV file in the specified directory

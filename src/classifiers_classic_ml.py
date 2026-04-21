@@ -1,4 +1,6 @@
+import os
 import pandas as pd
+import numpy as np
 
 # Metrics
 from sklearn.metrics import confusion_matrix, roc_curve, classification_report, accuracy_score, precision_score, recall_score, f1_score, auc
@@ -55,6 +57,8 @@ def visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', metho
         - Class labels are represented by different colors in the scatter plots.
     """
     perplexity = 10
+    y_train = np.array(y_train).ravel()
+    y_test = np.array(y_test).ravel()
 
     if plot_type == '3D':
         if method == 'PCA':
@@ -100,12 +104,14 @@ def visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', metho
         fig = px.scatter(df_reduced, x='col1', y='col2', color='Class', title='2D')
     
     fig.update_layout(
-        title=f"Embeddings - {method} {plot_type} Visualization",
-        scene=dict()
+        title=f"Embeddings - {method} {plot_type} Visualization"
     )
     
-    fig.show()
-    
+    os.makedirs("plots", exist_ok=True)
+    out_path = f"plots/embeddings_{method}_{plot_type}.html"
+    fig.write_html(out_path)
+    print(f"Interactive embedding plot saved to {out_path}")
+
     return red
 
 
@@ -165,7 +171,6 @@ def test_model(X_test, y_test, model):
     if y_pred_proba.shape[1] == 2:
         fpr, tpr, _ = roc_curve(y_test, y_pred_proba[:, 1])
         ax.plot(fpr, tpr, color='aqua', lw=2, label=f'ROC curve (area = {auc(fpr, tpr):.2f})')
-        ax.plot([0, 1], [0, 1], "k--", label="Chance level (AUC = 0.5)")
     # Multiclass classification
     else: 
         y_onehot_test = pd.get_dummies(y_test).values
@@ -230,7 +235,7 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, models=None, test
     
     visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', method='PCA')
     
-    if not(models):
+    if not models:
         # DONE: Implement the ML models
         # The models should be a list of tuples, where each tuple contains the model name and the model instance
         # Example: models = [ ('Model 1', Model1()), ('Model2', Model2()), ... ('ModelN', ModelN()) ]

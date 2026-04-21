@@ -6,9 +6,6 @@ import tensorflow as tf
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Dropout, Concatenate, BatchNormalization
-from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, roc_curve
@@ -198,10 +195,10 @@ def create_early_fusion_model(text_input_size, image_input_size, output_size, hi
     
     if text_input_size is not None:
         # DONE: Define text input layer for only text data
-        text_input = Input(shape=(text_input_size,))
+        text_input = Input(shape=(text_input_size,), name="text")
     if image_input_size is not None:
         # DONE: Define image input layer for only image data
-        image_input = Input(shape=(image_input_size,))
+        image_input = Input(shape=(image_input_size,), name="image")
     
     
     if text_input_size is not None and image_input_size is not None:
@@ -315,7 +312,6 @@ def test_model(y_test, y_pred, y_prob=None, encoder=None):
     return accuracy, precision, recall, f1
 
 
-    
 def train_mlp(train_loader, test_loader, text_input_size, image_input_size, output_size, hidden=None, num_epochs=50, report=False, lr=0.001, set_weights=True, adam=False, p=0.0, seed=1, patience=40, save_results=True, train_model=True, test_mlp_model=True):
     """
     Trains a multimodal early fusion model using both text and image data.
@@ -433,8 +429,7 @@ def train_mlp(train_loader, test_loader, text_input_size, image_input_size, outp
         test_accuracy = accuracy_score(np.argmax(y_true, axis=1), y_pred)
         f1 = f1_score(np.argmax(y_true, axis=1), y_pred, average='macro')
         
-        auc_scores = roc_auc_score(y_true, y_prob, average='macro', multi_class='ovr')
-        macro_auc = auc_scores
+        macro_auc = roc_auc_score(y_true, y_prob, average='macro', multi_class='ovr')
 
         plt.plot(history.history['accuracy'], label='Train Accuracy')
         plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
