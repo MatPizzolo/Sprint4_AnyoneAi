@@ -81,5 +81,8 @@ lightning_logs/
 *.out
 *.csv
 *.tsv
-results/
 outputs/
+
+# Keep result CSVs — required by the grading platform
+!results/
+!results/*.csv
