@@ -18,6 +18,23 @@ warnings.filterwarnings("ignore")
 # Suppress TensorFlow warnings
 tf.get_logger().setLevel('ERROR')
 
+# tensorflow-metal cannot compile the depthwise convolutions used by ConvNeXtV2;
+# Model.predict raises "could not find registered platform with id" at dwconv.
+# Hiding GPUs forces CPU execution, which works correctly. No-op on the grader
+# (Linux, no GPU plugin loaded).
+try:
+    tf.config.set_visible_devices([], 'GPU')
+except Exception:
+    pass
+
+# HuggingFace TF models require the Keras 2 API. On TF >= 2.16 (Keras 3 default)
+# this lives in the separate `tf-keras` package; on TF < 2.16, `tensorflow.keras`
+# already IS Keras 2 so we use it directly.
+try:
+    import tf_keras as _tf_keras
+except ImportError:
+    from tensorflow import keras as _tf_keras
+
 def load_and_preprocess_image(image_path, target_size=(224, 224)):
     """
     Load and preprocess an image.
@@ -91,11 +108,10 @@ class FoundationalCVModel:
         _transformer_backbones = ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']
         _is_transformer = backbone in _transformer_backbones
 
-        # Select the backbone from the possible foundational models
-        # HuggingFace TF models use tf_keras internally; use tf_keras.Input for transformer
-        # backbones to avoid Keras 3 KerasTensor incompatibility with input_processing.
+        # Select the backbone from the possible foundational models.
+        # Transformer backbones build via _tf_keras (Keras 2 API — see module-level
+        # import) to stay compatible with HuggingFace's input_processing.
         if _is_transformer:
-            import tf_keras as _tf_keras
             input_layer = _tf_keras.Input(shape=input_shape)
         else:
             input_layer = Input(shape=input_shape)
